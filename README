@@ -1,0 +1,6 @@
+Proclaunch is a super simple pure-perl process management framework. It takes two command line arguments: a place to write it's pidfile and a directory full of profiles. A profile is a directory that contains these special files:
+
+- pid_file = contains the path to the file where run will place it's pid
+- run = an executable that will daemonize itself and write it's pid to the path in pid_file
+- restart = an empty file who's presence tells proclaunch to restart run if it dies.
+
