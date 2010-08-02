@@ -8,6 +8,8 @@ use POSIX qw/ setsid /;
 
 use Carp;
 
+use File::Slurp qw/ read_file write_file /;
+
 BEGIN {
     @EXPORT_OK = qw/
         still_running
@@ -29,14 +31,6 @@ sub still_running
     return kill(0, $pid);
 }
 
-sub read_file
-{
-    my $filename = shift;
-    my $fh = IO::File->new($filename)
-        or croak "Cannot open $filename: $!";
-    return join("\n", map { chomp($_); $_ } $fh->getlines());
-}
-
 sub read_pid_file
 {
     my $filename = shift;
@@ -52,16 +46,6 @@ sub write_pid_file
     my ($filename, $pid) = @_;
     die "'$pid' does not look like a pid" unless $pid =~ /^\d+$/;
     write_file($filename, $pid);
-}
-
-sub write_file
-{
-    my ($filename, $contents) = shift;
-    my $fh = IO::File->new($filename, 'w+')
-        or croak "Cannot open $filename: $!";
-    $fh->print($contents);
-    $fh->flush();
-    $fh->close();
 }
 
 sub redirect_output

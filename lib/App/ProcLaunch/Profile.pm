@@ -8,21 +8,15 @@ use App::ProcLaunch::Util qw/
     cleanup_dead_pid_file
 /;
 
-use File::Stat;
-
 use Class::Struct
     directory => '$',
     _pid_file => '$',
-    dir_stat  => '$'
 ;
 
 sub run {
     my $self = shift;
     return unless cleanup_dead_pid_file($self->pid_file());
     warn "Starting " . $self->directory();
-
-    my $stat = stat($self->directory());
-    $self->dir_stat($stat);
 
     defined(my $pid = fork()) or die "Could not fork: $!";
 
@@ -84,17 +78,6 @@ sub send_signal
     if ($self->is_running()) {
         kill $signal, $self->current_pid();
     }
-}
-
-sub has_changed
-{
-    warn "here";
-    my $self = shift;
-    my $stat = stat($self->directory());
-
-    warn "checking " . $self->dir_stat()->mtime() . " against " . $stat->mtime();
-
-    return $self->dir_stat()->ino() ne $stat->ino() || $self->dir_stat()->mtime() ne $stat->mtime();
 }
 
 1;

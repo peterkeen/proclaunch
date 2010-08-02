@@ -10,32 +10,26 @@ use App::ProcLaunch::Util qw/
 
 use App::ProcLaunch::Profile;
 use Cwd qw/ abs_path cwd /;
-use File::Stat qw/ stat /;;
 
 use Class::Struct
     pidfile      => '$',
     profiles_dir => '$',
-    dir_stat     => '$',
 ;
 
 sub run
 {
     my $self = shift;
     unless(cleanup_dead_pid_file($self->pidfile())) {
-        die "already running stop that";
+        exit 0;
     }
 
     my $profiles_dir = $self->profiles_dir();
-    warn "Starting for profiles_dir = $profiles_dir";
 
     redirect_output("$profiles_dir/error.log");
     daemonize();
     write_pid_file($self->pidfile(), $$);
 
     chdir $profiles_dir;
-
-    my $stat = stat(cwd('.'));
-    $self->dir_stat($stat);
 
     my @profiles = $self->scan_profiles();
     $_->run() for @profiles;
@@ -52,12 +46,6 @@ sub run
         for my $profile ( @profiles ) {
             next if $profile->is_running();
             next unless $profile->should_restart();
-
-            if ($profile->has_changed()) {
-                warn "Restarting " . $profile->directory();
-                $profile->send_signal(15);
-                waitpid($profile->current_pid(), 0);
-            }
 
             $profile->run();
             die $profile->directory() . " did not create pid_file " . $profile->pid_file()
