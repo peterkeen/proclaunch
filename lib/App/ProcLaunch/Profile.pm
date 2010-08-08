@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use POSIX qw/ :sys_wait_h /;
+use English '-no_match_vars';
 
 use App::ProcLaunch::Util qw/
     read_file
@@ -47,7 +48,29 @@ sub run {
 
 sub drop_privs
 {
-    # TODO
+    my $self = shift;
+
+    return unless -e $self->profile_file('user');
+
+    my $user = $self->profile_setting('user');
+    chomp $user;
+
+    my ($uid, $gid, $home, $shell) = (getpwnam($user))[2,3,7,8];
+
+    $ENV{USER} = $user;
+    $ENV{LOGNAME} = $user;
+    $ENV{HOME} = $home;
+    $ENV{SHELL} = $shell;
+
+    $GID = $EGID = $gid;
+    $UID = $EUID = $uid;
+
+    my %GIDHash = map { $_ => 1 } ($gid, split(/\s/, $GID));
+    my %EGIDHash = map { $_ => 1 } ($gid, split(/\s/, $EGID));
+
+    if($UID ne $uid or $EUID ne $uid or !defined($GIDHash{$gid}) or !defined($EGIDHash{$gid})) {
+        log_fatal("Could not drop privileges to uid:$uid, gid:$gid");
+    }
 }
 
 sub pid_file_exists {
@@ -75,12 +98,17 @@ sub profile_file {
     return join("/", $self->directory(), $filename);
 }
 
+sub profile_setting {
+    my ($self, $setting) = @_;
+    my $setting_file = $self->profile_file($setting);
+    die "No file named $setting for profile " . $self->directory() unless -e $setting_file;
+    return read_file($setting_file);
+}
+
 sub pid_file {
     my $self = shift;
     unless ($self->_pid_file()) {
-        my $profile_pid_file = $self->profile_file('pid_file');
-        log_fatal "No file named pid_file for profile " . $self->directory() unless -e $profile_pid_file;
-        my $pid_file = read_file($profile_pid_file);
+        my $pid_file = $self->profile_setting('pid_file');
         $pid_file =~ s/\s*$//;
         $self->_pid_file($pid_file);
     }
@@ -105,7 +133,7 @@ sub stop
     my $restart_time = time();
     my $wait_until = $restart_time + SECONDS_TO_WAIT_FOR_CHILD_STOP;
 
-    log_info "Stopping " . $self->directory();
+    log_info "Stopping profile " . $self->directory();
     $self->send_signal(15);
     log_debug "Waiting for pid " . $self->current_pid() . " to stop";
 
