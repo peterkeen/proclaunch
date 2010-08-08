@@ -1,10 +1,18 @@
 package App::ProcLaunch::Util;
 
 use strict;
+use warnings;
+
 use base 'Exporter';
 use vars qw/ @EXPORT_OK /;
 use IO::File;
 use POSIX qw/ setsid /;
+
+use App::ProcLaunch::Log qw/
+    log_warn
+    log_debug
+    log_fatal
+/;
 
 use Carp;
 
@@ -20,6 +28,8 @@ BEGIN {
         write_file
         write_pid_file
         daemonize
+        stat_hash
+        diff_stats
     /;
 }
 
@@ -27,7 +37,10 @@ sub still_running
 {
     my $pidfile = shift;
     my $pid = read_pid_file($pidfile);
-    return 0 unless defined($pid);
+    unless (defined($pid)) {
+        return 0;
+    }
+
     return kill(0, $pid);
 }
 
@@ -50,9 +63,9 @@ sub write_pid_file
 
 sub redirect_output
 {
-    my ($filename, $append) = @_;
-    my $mode = $append ? '>>' : '>';
-    open(FH, $mode, $filename) or die "Cannot open $filename: $!";
+    my ($filename) = @_;
+    open(FH, ">>", $filename) or die "Cannot open $filename: $!";
+    FH->autoflush(1);
 
     *STDOUT = *FH;
     *STDERR = *FH;
@@ -71,11 +84,49 @@ sub cleanup_dead_pid_file
 
 sub daemonize
 {
+    my $output_file = shift;
     defined(my $pid = fork()) or die "Could not fork: $!";
     exit if $pid;
     setsid()                  or die "Could not setsid: $!";
     defined($pid = fork())    or die "Could not fork: $!";
     exit if $pid;
+    redirect_output($output_file);
+}
+
+sub stat_hash
+{
+    my $filename = shift;
+
+    my @elements = qw/
+        device
+        inode
+        mode
+        nlink
+        uid
+        gid
+        rdev
+        size
+        atime
+        mtime
+        ctime
+        blksize
+        blocks
+    /;
+
+    my @stat = stat($filename);
+    return { map { $elements[$_] => $stat[$_] } (0 .. $#stat) };
+}
+
+sub diff_stats
+{
+    my ($a, $b) = @_;
+    log_fatal "need two things to diff!" unless $a && $b;
+
+    return 1 if $a->{inode}  != $b->{inode}
+             || $a->{mtime}  != $b->{mtime}
+             || $a->{device} != $b->{device}
+    ;
+    return 0;
 }
 
 1;

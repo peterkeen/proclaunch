@@ -2,9 +2,10 @@
 
 use strict;
 use warnings;
-use POSIX qw/ setsid /;
+use File::Spec::Functions qw/ rel2abs /;
 
 use App::ProcLaunch;
+use Getopt::Long;
 
 =head1 DESCRIPTION
 
@@ -27,12 +28,19 @@ What does this thing need to do?
 
 =cut
 
-my ($pidfile, $profiles_dir) = @ARGV;
+GetOptions(
+    'f|foreground' => \my $foreground,
+    'D|debug'      => \my $debug,
+);
 
-die "usage: $0 [pid file] [profiles dir]"
-    unless $pidfile && $profiles_dir;
+my ($state_dir, $profiles_dir) = @ARGV;
+
+die "usage: $0 [options] [state dir] [profiles dir]"
+    unless $state_dir && $profiles_dir;
 
 App::ProcLaunch->new(
-    pidfile => $pidfile,
-    profiles_dir => $profiles_dir,
+    state_dir    => rel2abs($state_dir),
+    profiles_dir => rel2abs($profiles_dir),
+    foreground   => $foreground,
+    debug        => $debug,
 )->run();
