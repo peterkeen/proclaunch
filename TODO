@@ -1,0 +1,3 @@
+* Kill profiles if they go away (maintain a list of known profiles somewhere)
+* Provide a way for a profile to say "restart if this file changes"
+* Maybe a control program to start and stop individual or all services, or initiate a rescan
