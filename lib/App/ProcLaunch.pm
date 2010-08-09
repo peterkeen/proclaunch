@@ -1,5 +1,7 @@
 package App::ProcLaunch;
 
+our $VERSION = 0.1;
+
 use strict;
 use warnings;
 use App::ProcLaunch::Util qw/
