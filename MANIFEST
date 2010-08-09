@@ -10,5 +10,6 @@ lib/App/ProcLaunch/Util.pm
 LICENSE
 MANIFEST			This list of files
 README
-script/proclaunch
+bin/proclaunch
 TODO
+META.yml
