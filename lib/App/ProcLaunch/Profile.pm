@@ -28,8 +28,6 @@ use Class::Struct
     _pid_file => '$',
 ;
 
-use constant SECONDS_TO_WAIT_FOR_CHILD_STOP => 7;
-
 sub run
 {
     my $self = shift;
@@ -157,7 +155,13 @@ sub stop
     }
 
     my $restart_time = time();
-    my $wait_until = $restart_time + SECONDS_TO_WAIT_FOR_CHILD_STOP;
+    my $seconds_to_wait = 7;
+
+    try {
+        my $seconds_to_wait = $self->profile_setting('wait_for_stop');
+    } catch { }
+
+    my $wait_until = $restart_time + $seconds_to_wait;
 
     log_info "Stopping profile " . $self->directory();
     $self->send_signal(15);
@@ -168,8 +172,7 @@ sub stop
         sleep 1;
     }
 
-    log_warn $self->directory() . " did not respond to TERM. Sending KILL.";
-    $self->send_signal(9);
+    log_warn $self->directory() . " did not respond to TERM.";
 }
 
 sub has_changed
