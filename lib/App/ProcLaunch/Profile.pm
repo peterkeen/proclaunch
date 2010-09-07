@@ -154,25 +154,8 @@ sub stop
         return;
     }
 
-    my $restart_time = time();
-    my $seconds_to_wait = 7;
-
-    try {
-        my $seconds_to_wait = $self->profile_setting('wait_for_stop');
-    } catch { }
-
-    my $wait_until = $restart_time + $seconds_to_wait;
-
     log_info "Stopping profile " . $self->directory();
     $self->send_signal(15);
-    log_debug "Waiting for pid " . $self->current_pid() . " to stop";
-
-    while(time() <= $wait_until) {
-        return unless $self->is_running();
-        sleep 1;
-    }
-
-    log_warn $self->directory() . " did not respond to TERM.";
 }
 
 sub has_changed

@@ -38,7 +38,6 @@ use Class::Struct
     debug             => '$',
 ;
 
-
 sub run
 {
     my $self = shift;
@@ -100,6 +99,9 @@ sub run
                     $old_profiles{$dir}->stop();
 
                     if ($old_profiles{$dir}->is_running()) {
+                        my $pid = $old_profiles{$dir}->current_pid();
+
+                        log_info "$dir (pid $pid) did not respond to SIGTERM! Queuing for later retry.";
                         $old_pids_to_kill{$old_profiles{$dir}->current_pid()} = 1;
                     }
                 }
