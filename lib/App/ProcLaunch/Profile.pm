@@ -30,8 +30,10 @@ use Class::Struct
 
 use constant SECONDS_TO_WAIT_FOR_CHILD_STOP => 7;
 
-sub run {
+sub run
+{
     my $self = shift;
+
     return unless cleanup_dead_pid_file($self->pid_file());
     log_info "Starting profile " . $self->directory();
 
@@ -68,50 +70,73 @@ sub drop_privs
     my %GIDHash = map { $_ => 1 } ($gid, split(/\s/, $GID));
     my %EGIDHash = map { $_ => 1 } ($gid, split(/\s/, $EGID));
 
-    if($UID ne $uid or $EUID ne $uid or !defined($GIDHash{$gid}) or !defined($EGIDHash{$gid})) {
+    if (
+        $UID ne $uid
+        or $EUID ne $uid
+        or !defined($GIDHash{$gid})
+        or !defined($EGIDHash{$gid})
+    ) {
         log_fatal("Could not drop privileges to uid:$uid, gid:$gid");
     }
 }
 
-sub pid_file_exists {
+sub pid_file_exists
+{
     my $self = shift;
+
     return -e $self->pid_file();
 }
 
-sub current_pid {
+sub current_pid
+{
     my $self = shift;
+
     return read_pid_file($self->pid_file());
 }
 
-sub is_running {
+sub is_running
+{
     my $self = shift;
+
     return still_running($self->pid_file());
 }
 
-sub should_restart {
+sub should_restart
+{
     my $self = shift;
+
     return -e $self->profile_file('restart');
 }
 
-sub profile_file {
+sub profile_file
+{
     my ($self, $filename) = @_;
+
     return join("/", $self->directory(), $filename);
 }
 
-sub profile_setting {
+sub profile_setting
+{
     my ($self, $setting) = @_;
+
     my $setting_file = $self->profile_file($setting);
-    die "No file named $setting for profile " . $self->directory() unless -e $setting_file;
+
+    die "No file named $setting for profile " . $self->directory()
+        unless -e $setting_file;
+
     return read_file($setting_file);
 }
 
-sub pid_file {
+sub pid_file
+{
     my $self = shift;
+
     unless ($self->_pid_file()) {
         my $pid_file = $self->profile_setting('pid_file');
         $pid_file =~ s/\s*$//;
         $self->_pid_file($pid_file);
     }
+
     return $self->_pid_file();
 }
 
@@ -125,6 +150,7 @@ sub send_signal
 sub stop
 {
     my ($self) = @_;
+
     unless ($self->is_running()) {
         log_warn $self->directory() . " is not running! Thought pid was: " . $self->current_pid();
         return;
