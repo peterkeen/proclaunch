@@ -16,14 +16,12 @@ When executed, proclaunch will daemonize itself and write it's pid file to `$sta
 The profile directory should contain a series of directories, each of which describes a process to be managed via a set of specially named files:    
 
 * `pid_file`
-
     contains the path to the file where run will place it's pid
 
 * `run`
     an executable that will daemonize itself and write it's pid to the path in pid_file
 
 * `restart`
-
     an empty file who's presence tells proclaunch to restart run if it dies.
 
 [runit]:           http://smarden.org/runit/
