@@ -52,6 +52,8 @@ sub drop_privs
 
     return unless -e $self->profile_file('user');
 
+    return unless $UID == 0;
+
     my $user = $self->profile_setting('user');
     chomp $user;
 
