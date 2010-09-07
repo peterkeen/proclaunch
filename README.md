@@ -23,5 +23,12 @@ The profile directory should contain a series of directories, each of which desc
 
 * `restart`
     is an optional empty file who's presence tells proclaunch to restart `run` if it dies.
+    
+* `user`
+    is an optional file containing the user name that should execute `run`. Only effective if proclaunch has been run as root.
+    
+### Behavior
+
+Initially, proclaunch will launch all profiles contained in the profile directory. When a profile exits and the `restart` file exists, the profile will be restarted. Additionally, proclaunch will scan every five seconds to see if either an individual profile directory has changed, been added, or disappeared. Added profiles will be started, removed profiles will be stopped with SIGTERM, and changed profiles will be restarted. Proclaunch will also check the inode and mtime on the profiles directory has a whole every second and rescan immediately if it has changed.
 
 [runit]:           http://smarden.org/runit/
