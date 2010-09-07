@@ -4,6 +4,9 @@ our $VERSION = 0.1;
 
 use strict;
 use warnings;
+
+use App::ProcLaunch::Profile;
+
 use App::ProcLaunch::Util qw/
     cleanup_dead_pid_file
     daemonize
@@ -21,8 +24,9 @@ use App::ProcLaunch::Log qw/
     INFO
 /;
 
-use App::ProcLaunch::Profile;
-use File::Slurp qw/ read_file write_file /;
+use File::Slurp qw/
+    read_file write_file
+/;
 
 use constant RESCAN_EVERY_SECONDS => 5;
 
@@ -45,7 +49,7 @@ sub run
     my $profiles_dir = $self->profiles_dir();
     set_log_level($self->debug() ? DEBUG : INFO);
 
-    unless($self->foreground()) {
+    unless ($self->foreground()) {
         daemonize("$profiles_dir/error.log");
         write_pid_file($self->pidfile(), $$);
     }
@@ -78,9 +82,13 @@ sub run
 
     my $last_rescan_time = time();
 
+    my %old_pids_to_kill;
+
     while(1) {
 
-        if (my $reason = $self->should_rescan($last_rescan_time)) {
+        $self->kill_old_pids(\%old_pids_to_kill);
+
+        if ($self->should_rescan($last_rescan_time)) {
             log_debug "Rescanning profiles";
 
             my %old_profiles = map { $_->directory() => $_ } @profiles;
@@ -90,6 +98,10 @@ sub run
             for my $dir ( sort keys %old_profiles ) {
                 if (!defined($new_profiles{$dir}) || $old_profiles{$dir}->has_changed()) {
                     $old_profiles{$dir}->stop();
+
+                    if ($old_profiles{$dir}->is_running()) {
+                        $old_pids_to_kill{$old_profiles{$dir}->current_pid()} = 1;
+                    }
                 }
             }
 
@@ -147,6 +159,20 @@ sub pidfile
 {
     my $self = shift;
     return $self->state_dir() . "/proclaunch.pid";
+}
+
+sub kill_old_pids
+{
+    my ($self, $pid_hash) = shift;
+
+    for my $pid ( keys %$pid_hash ) {
+        if (kill(0, $pid)) {
+            log_info "Killing old pid $pid";
+            kill(15, $pid);
+        } else {
+            delete $pid_hash->{$pid};
+        }
+    }
 }
 
 1;
