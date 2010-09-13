@@ -20,6 +20,8 @@ use App::ProcLaunch::Log qw/
     set_log_level
     log_info
     log_debug
+    log_fatal
+    log_warn
     DEBUG
     INFO
 /;
@@ -102,7 +104,7 @@ sub run
                         my $pid = $old_profiles{$dir}->current_pid();
 
                         log_info "$dir (pid $pid) did not respond to SIGTERM! Queuing for later retry.";
-                        $old_pids_to_kill{$old_profiles{$dir}->current_pid()} = 1;
+                        $old_pids_to_kill{$pid} = 1;
                     }
                 }
             }
@@ -117,9 +119,8 @@ sub run
             next unless $profile->should_restart();
 
             $profile->run();
-            log_fatal $profile->directory() . " did not create pid_file " . $profile->pid_file()
-                unless $profile->pid_file_exists();
         }
+
         sleep 1;
     }
 }

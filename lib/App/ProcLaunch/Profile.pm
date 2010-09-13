@@ -40,9 +40,17 @@ sub run
     if ($pid == 0) {
         $self->drop_privs();
         chdir $self->directory();
-        exec("./run");
+        exec("./run 2>&1 >> ../run.log");
     } else {
         waitpid($pid, 0);
+        log_info("Waiting for " . $self->directory() . " to create pid file...");
+
+        sleep 1;
+        if ($self->pid_file_exists()) {
+            log_info($self->directory() . " started pid " . $self->current_pid());
+        } else {
+            log_warn($self->directory() . " did not create pid_file " . $self->pid_file());
+        }
     }
 }
 

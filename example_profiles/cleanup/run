@@ -1,0 +1,21 @@
+#!/usr/bin/env perl
+
+use lib '../../lib';
+use App::ProcLaunch::Util qw/ daemonize write_pid_file /;
+
+my $pid_file_path = '/tmp/cleanup.pid';
+
+sub cleanup_pid_file
+{
+    sleep 3;
+    unlink $pid_file_path;
+    exit 0;
+}
+
+daemonize('/tmp/cleanup.log');
+write_pid_file($pid_file_path, $$);
+
+$SIG{TERM} = \&cleanup_pid_file;
+$SIG{INT}  = \&cleanup_pid_file;
+
+sleep(1) while 1;

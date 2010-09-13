@@ -47,7 +47,7 @@ sub log_line
 sub log_fatal
 {
     log_line(FATAL, 1, @_);
-    die;
+    die @_;
 }
 
 sub log_warn
