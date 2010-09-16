@@ -9,7 +9,7 @@ lib/App/ProcLaunch/Profile.pm
 lib/App/ProcLaunch/Util.pm
 LICENSE
 MANIFEST			This list of files
-README
+README.md
 bin/proclaunch
 TODO
 
