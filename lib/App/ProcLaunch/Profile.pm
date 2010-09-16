@@ -22,17 +22,54 @@ use App::ProcLaunch::Log qw/
     log_fatal
 /;
 
+use constant STATUS_STOPPED  => 1;
+use constant STATUS_STARTING => 2;
+use constant STATUS_RUNNING  => 3;
+use constant STATUS_STOPPING => 4;
+
+use constant KNOWN_FILES => [ qw/ run pid_file user restart / ];
+
 use Class::Struct
-    directory => '$',
-    dir_stat  => '$',
-    _pid_file => '$',
+    directory     => '$',
+    _pid_file     => '$',
+    _status       => '$',
+    _should_start => '$',
+    _file_stats   => '%',
 ;
 
 sub run
 {
     my $self = shift;
 
-    return unless cleanup_dead_pid_file($self->pid_file());
+    # Class::Struct doesn't give us an init() so we have to do this here
+    unless ($self->_status()) {
+        $self->_status(STATUS_STOPPED);
+        $self->_should_start(1);
+        $self->_refresh_file_stats();
+    }
+
+    my $behavior = {
+        STATUS_STOPPED()  => \&start_if_should_start,
+        STATUS_STARTING() => \&check_if_running,
+        STATUS_RUNNING()  => \&stop_if_should_stop,
+        STATUS_STOPPING() => \&check_if_stopped,
+    };
+
+    $behavior->{$self->_status()}->($self);
+}
+
+sub start_if_should_start
+{
+    my ($self) = @_;
+    if ($self->_should_start()) {
+        $self->start();
+    }
+}
+
+sub start
+{
+    my ($self) = @_;
+
     log_info "Starting profile " . $self->directory();
 
     defined(my $pid = fork()) or log_fatal "Could not fork: $!";
@@ -42,15 +79,44 @@ sub run
         chdir $self->directory();
         exec("./run 2>&1 >> ../run.log");
     } else {
-        waitpid($pid, 0);
-        log_info("Waiting for " . $self->directory() . " to create pid file...");
+        waitpid($pid, WNOHANG);
+    }
 
-        sleep 1;
-        if ($self->pid_file_exists()) {
-            log_info($self->directory() . " started pid " . $self->current_pid());
-        } else {
-            log_warn($self->directory() . " did not create pid_file " . $self->pid_file());
-        }
+    $self->_status(STATUS_STARTING);
+}
+
+sub check_if_running
+{
+    my ($self) = @_;
+
+    if ($self->is_running()) {
+        $self->_status(STATUS_RUNNING);
+        log_info "Profile " . $self->directory() . " running pid " . $self->current_pid();
+    }
+}
+
+sub stop_if_should_stop
+{
+    my ($self) = @_;
+
+    if ($self->has_changed()) {
+        $self->stop();
+        $self->_status(STATUS_STOPPING);
+        $self->_should_start($self->should_restart());
+    }
+
+    $self->_refresh_file_stats();
+}
+
+sub check_if_stopped
+{
+    my ($self) = @_;
+
+    if ($self->is_running()) {
+        log_debug("Profile %s still running on pid %s", $self->directory(), $self->current_pid());
+    } else {
+        log_info("Profile %s stopped", $self->directory());
+        $self->_status(STATUS_STOPPED);
     }
 }
 
@@ -60,6 +126,7 @@ sub drop_privs
 
     return unless -e $self->profile_file('user');
 
+    log_debug("Current UID: $UID");
     return unless $UID == 0;
 
     my $user = $self->profile_setting('user');
@@ -171,9 +238,28 @@ sub stop
 sub has_changed
 {
     my $self = shift;
-    my $stat = stat_hash($self->directory());
 
-    return diff_stats($stat, $self->dir_stat());
+    for my $file ( @{ KNOWN_FILES() } ) {
+        if (-e $self->profile_file($file)) {
+            my $stat = stat_hash($self->profile_file($file));
+            if ($self->_file_stats($file) && diff_stats($stat, $self->_file_stats($file))) {
+                return 1;
+            }
+        }
+    }
+
+    return 0;
+}
+
+sub _refresh_file_stats
+{
+    my $self = shift;
+
+    for my $file ( @{ KNOWN_FILES() } ) {
+        if (-e $self->profile_file($file)) {
+            $self->_file_stats($file, stat_hash($self->profile_file($file)));
+        }
+    }
 }
 
 1;

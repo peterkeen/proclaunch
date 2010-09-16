@@ -1,3 +1,17 @@
 * Provide a way for a profile to say "restart if this file changes"
 * Maybe a control program to start and stop individual or all services, or initiate a rescan
 * Tests, at least for the Util functions
+
+* Simplfy the application loop into an explicit state machine
+  * App::ProcLaunch::run does only a few things:
+    1) one-time setup
+    2) start a loop
+    3) in the loop, maintain the hash App::ProcLaunch::_profiles
+    4) in the loop, for each profile in the hash, call Profile::run()
+
+  * App::ProcLaunch::Profile::run() keeps state in App::ProcLaunch::Profile::_status
+    * if status is STOPPED, do _start_profile_if_should_start && set status to STARTING
+    * if status is STARTING, check for pid_file, set status to RUNNING
+    * if status is RUNNING, check that pid in pid_file actually exists and check if should restart
+    * if should restart, set status to STOPPING and send SIGKILL
+    * if status is STOPPING, check for pid in pid_file. if pid is gone, set status to STOPPED

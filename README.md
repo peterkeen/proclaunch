@@ -29,6 +29,20 @@ The profile directory should contain a series of directories, each of which desc
     
 ### Behavior
 
-Initially, proclaunch will launch all profiles contained in the profile directory. When a profile exits and the `restart` file exists, the profile will be restarted. Additionally, proclaunch will scan every five seconds to see if either an individual profile directory has changed, been added, or disappeared. Added profiles will be started, removed profiles will be stopped with SIGTERM, and changed profiles will be restarted. Proclaunch will also check the inode and mtime on the profiles directory has a whole every second and rescan immediately if it has changed.
+Initially, proclaunch will launch all profiles contained in the profile directory. When a profile exits and the `restart` file exists, the profile will be restarted. Additionally, proclaunch will scan every second to see if either an individual profile directory has changed, been added, or disappeared. Added profiles will be started, removed profiles will be stopped with SIGTERM, and changed profiles will be restarted. Changes are determined by comparing file stats of the above set of files, not the directory as a whole.
+
+### Starting proclaunch
+
+Proclaunch daemonizes itself by default, so the easiest thing to do is add a line to crontab:
+
+    * * * * * /usr/local/bin/proclauch /var/run/proclaunch /path/to/your/profiles/directory
+
+Proclaunch is idempotent, meaning if it's already running it'll silently exit. This cron entry ensures that it will be restarted if it falls over for any reason.
+
+### Contributing 
+
+If you have bug reports, please use the [Github issue tracker][issues]. If you have something to contribute, fork proclaunch and send me a pull request :)
 
 [runit]:           http://smarden.org/runit/
+[issues]:          http://github.com/peterkeen/proclaunch/issues
+
