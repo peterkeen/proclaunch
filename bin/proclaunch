@@ -7,27 +7,6 @@ use File::Spec::Functions qw/ rel2abs /;
 use App::ProcLaunch;
 use Getopt::Long;
 
-=head1 DESCRIPTION
-
-What does this thing need to do?
-- usage: proclaunch [ path to pidfile ] [ path to profiles dir ]
-- try to remove dead pidfile
-- try to write new pidfile
-- scan the profile directory
-- for each profile (dir in profile dir):
-  - save off some metadata about this profile (inode, mtime, name)
-  - fork (if not already forked for this profile), save pid in parent
-  - ensure there is an executable named "run"
-  - ensure there is a file named "pid_file"
-  - if it's still running (check pid_file), don't do anything
-  - if it's not running, remove the dead pid_file and system() the run script
-  - die if the run script didn't create the pid_file
-  - install signal handlers to forward to child
-  - sleep(1) while process_still_running(pid_file)
-  - restart if it should restart ("restart" file present in profile)
-
-=cut
-
 GetOptions(
     'f|foreground' => \my $foreground,
     'D|debug'      => \my $debug,
