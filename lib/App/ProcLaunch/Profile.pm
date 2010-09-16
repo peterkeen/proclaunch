@@ -99,12 +99,15 @@ sub stop_if_should_stop
 {
     my ($self) = @_;
 
-    if ($self->has_changed()) {
+    if (!$self->is_running()) {
+        log_info("Profile %s died", $self->directory);
+        $self->_status(STATUS_STOPPED);
+    } elsif ($self->has_changed()) {
         $self->stop();
         $self->_status(STATUS_STOPPING);
-        $self->_should_start($self->should_restart());
     }
 
+    $self->_should_start($self->should_restart());
     $self->_refresh_file_stats();
 }
 
