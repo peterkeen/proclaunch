@@ -43,7 +43,12 @@ sub run
 
     # Class::Struct doesn't give us an init() so we have to do this here
     unless ($self->_status()) {
-        $self->_status(STATUS_STOPPED);
+        if ($self->is_running()) {
+            $self->_status(STATUS_RUNNING);
+        } else {
+            $self->_status(STATUS_STOPPED);
+        }
+
         $self->_should_start(1);
         $self->_refresh_file_stats();
     }
