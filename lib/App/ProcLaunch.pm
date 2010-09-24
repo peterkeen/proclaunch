@@ -1,6 +1,6 @@
 package App::ProcLaunch;
 
-our $VERSION = 0.2;
+our $VERSION = 1.0;
 
 use strict;
 use warnings;
@@ -65,21 +65,21 @@ sub run
         write_pid_file($self->pidfile(), $$);
     }
 
-    log_info "Started pid $$";
+    log_info "ProcLaunch started pid $$";
 
-    log_debug "Changing to $profiles_dir";
+    log_debug "ProcLaunch changing to $profiles_dir";
     chdir $profiles_dir;
 
     $SIG{HUP} = sub {
-        log_info "Received HUP. Stopping all profiles.";
+        log_info "ProcLaunch received HUP. Stopping all profiles.";
         $self->foreach_profile(sub { shift->stop() });
 
-        log_info "Exiting";
+        log_info "ProcLaunch exiting";
         exit 111;
     };
 
     $SIG{TERM} = sub {
-        log_info "Exiting";
+        log_info "ProcLaunch exiting";
         exit 0;
     };
 
@@ -105,7 +105,7 @@ sub scan_profiles
         next unless -d $profile;
 
         unless ($self->_profiles($profile)) {
-            log_debug "Creating profile for $profile";
+            log_debug "ProcLaunch creating profile for $profile";
             my $p = App::ProcLaunch::Profile->new(
                 directory => $profile,
             );

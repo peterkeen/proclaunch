@@ -75,9 +75,9 @@ sub start
 {
     my ($self) = @_;
 
-    log_info "Starting profile " . $self->directory();
+    log_info "%s starting", $self->directory();
 
-    defined(my $pid = fork()) or log_fatal "Could not fork: $!";
+    defined(my $pid = fork()) or log_fatal "ProcLaunch could not fork: $!";
 
     if ($pid == 0) {
         $self->drop_privs();
@@ -96,7 +96,7 @@ sub check_if_running
 
     if ($self->is_running()) {
         $self->_status(STATUS_RUNNING);
-        log_info "Profile " . $self->directory() . " running pid " . $self->current_pid();
+        log_info "%s running pid %s", $self->directory(), $self->current_pid();
     }
 }
 
@@ -105,7 +105,7 @@ sub stop_if_should_stop
     my ($self) = @_;
 
     if (!$self->is_running()) {
-        log_info("Profile %s died", $self->directory);
+        log_info("%s died", $self->directory);
         $self->_status(STATUS_STOPPED);
     } elsif ($self->has_changed()) {
         $self->stop();
@@ -121,9 +121,9 @@ sub check_if_stopped
     my ($self) = @_;
 
     if ($self->is_running()) {
-        log_debug("Profile %s still running on pid %s", $self->directory(), $self->current_pid());
+        log_debug("%s still running on pid %s", $self->directory(), $self->current_pid());
     } else {
-        log_info("Profile %s stopped", $self->directory());
+        log_info("%s stopped", $self->directory());
         $self->_status(STATUS_STOPPED);
     }
 }
@@ -134,7 +134,7 @@ sub drop_privs
 
     return unless -e $self->profile_file('user');
 
-    log_debug("Current UID: $UID");
+    log_debug("ProcLaunch current UID: $UID");
     return unless $UID == 0;
 
     my $user = $self->profile_setting('user');
@@ -159,7 +159,7 @@ sub drop_privs
         or !defined($GIDHash{$gid})
         or !defined($EGIDHash{$gid})
     ) {
-        log_fatal("Could not drop privileges to uid:$uid, gid:$gid");
+        log_fatal("ProcLaunch could not drop privileges to uid:$uid, gid:$gid");
     }
 }
 
@@ -204,7 +204,7 @@ sub profile_setting
 
     my $setting_file = $self->profile_file($setting);
 
-    die "No file named $setting for profile " . $self->directory()
+    log_fatal("%s no file named %s", $self->directory(), $setting)
         unless -e $setting_file;
 
     return read_file($setting_file);
@@ -226,8 +226,13 @@ sub pid_file
 sub send_signal
 {
     my ($self, $signal) = @_;
-    log_debug "Sending $signal to " . $self->current_pid();
-    kill $signal, $self->current_pid();
+    my $pid = $self->current_pid();
+    log_debug "%s sending %s to %s", $self->directory(), $signal, $self->current_pid();
+
+    unless (kill $signal, $pid) {
+        log_debug "%s not able to send signal! Assuming profile dead.", $self->directory();
+        $self->_status(STATUS_STOPPED);
+    }
 }
 
 sub stop
@@ -235,11 +240,11 @@ sub stop
     my ($self) = @_;
 
     unless ($self->is_running()) {
-        log_warn $self->directory() . " is not running! Thought pid was: " . $self->current_pid();
+        log_warn "%s is not running! Should be running on pid %s", $self->directory(), $self->current_pid();
         return;
     }
 
-    log_info "Stopping profile " . $self->directory();
+    log_info "%s stopping", $self->directory();
     $self->send_signal(15);
 }
 
