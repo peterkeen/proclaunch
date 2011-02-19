@@ -35,7 +35,7 @@ Initially, proclaunch will launch all profiles contained in the profile director
 
 Proclaunch daemonizes itself by default, so the easiest thing to do is add a line to crontab:
 
-    * * * * * /usr/local/bin/proclauch /var/run/proclaunch /path/to/your/profiles/directory
+    * * * * * /usr/local/bin/proclaunch /var/run/proclaunch /path/to/your/profiles/directory
 
 Proclaunch is idempotent, meaning if it's already running it'll silently exit. This cron entry ensures that it will be restarted if it falls over for any reason.
 
