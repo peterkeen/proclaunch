@@ -131,8 +131,18 @@ sub check_if_stopped
         log_debug("%s still running on pid %s", $self->directory(), $self->current_pid());
     } else {
         log_info("%s stopped", $self->directory());
-        $self->_status(STATUS_STOPPED);
+        $self->set_status_stopped_and_clean_pid_file();
     }
+}
+
+sub set_status_stopped_and_clean_pid_file
+{
+    my ($self) = @_;
+
+    $self->_status(STATUS_STOPPED);
+
+    log_debug("%s removing dead pid file", $self->directory());
+    cleanup_dead_pid_file($self->pid_file());
 }
 
 sub drop_privs
@@ -252,7 +262,7 @@ sub send_signal
 
     unless (kill $signal, $pid) {
         log_debug "%s not able to send signal! Assuming profile dead.", $self->directory();
-        $self->_status(STATUS_STOPPED);
+        $self->set_status_stopped_and_clean_pid_file();
     }
 }
 
