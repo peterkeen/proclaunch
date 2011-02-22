@@ -87,7 +87,7 @@ sub run
 
         $self->scan_profiles();
 
-        $self->foreach_profile(sub { shift->run() });
+        $self->foreach_profile(sub { shift->run(); });
 
         sleep 1;
     }
@@ -96,6 +96,22 @@ sub run
 sub scan_profiles
 {
     my $self = shift;
+
+    for my $dir ( keys %{ $self->_profiles() } ) {
+        my $profile = $self->_profiles()->{$dir};
+
+        if (! -e $dir && ! $profile->disappeared()) {
+            log_info "%s disappeared. Stopping and not restarting.", $dir;
+            $profile->stop();
+            $profile->disappeared(1);
+        }
+
+        if ($profile->disappeared() && ! $profile->is_running()) {
+            log_debug "%s deleting", $dir;
+            delete $self->_profiles()->{$dir};
+        }
+    }
+
     return unless $self->_should_scan();
 
     my @potentials = glob('*');
@@ -112,7 +128,7 @@ sub scan_profiles
 
             $self->_profiles($profile, $p);
         }
-    };
+    }
 
     $self->_last_scan_time(time());
 }

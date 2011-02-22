@@ -32,6 +32,7 @@ use constant KNOWN_FILES => [ qw/ run pid_file user restart / ];
 
 use Class::Struct
     directory     => '$',
+    disappeared   => '$',
     _pid_file     => '$',
     _status       => '$',
     _should_start => '$',
@@ -51,6 +52,7 @@ sub run
         }
 
         $self->_should_start(1);
+        $self->disappeared(0);
         $self->_refresh_file_stats();
     }
 
@@ -67,7 +69,7 @@ sub run
 sub start_if_should_start
 {
     my ($self) = @_;
-    if ($self->_should_start()) {
+    if ($self->_should_start() && ! $self->disappeared()) {
         $self->start();
     }
 }
@@ -108,10 +110,6 @@ sub stop_if_should_stop
     if (!$self->is_running()) {
         log_info("%s died", $self->directory());
         $self->_status(STATUS_STOPPED);
-    } elsif (! -e $self->directory()) {
-        log_info("%s disappeared. Stopping and not restarting.", $self->directory());
-        $self->stop();
-        $self->_should_start(0);
     } elsif ($self->has_changed()) {
         if ($self->should_reload()) {
             $self->reload();
