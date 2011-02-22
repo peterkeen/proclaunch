@@ -28,7 +28,7 @@ use constant STATUS_STARTING => 2;
 use constant STATUS_RUNNING  => 3;
 use constant STATUS_STOPPING => 4;
 
-use constant KNOWN_FILES => [ qw/ run pid_file user restart / ];
+use constant KNOWN_FILES => [ qw/ run pid_file user restart reload / ];
 
 use Class::Struct
     directory     => '$',
