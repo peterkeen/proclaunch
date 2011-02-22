@@ -1,0 +1,23 @@
+#!/usr/bin/env perl
+
+use lib '../../lib';
+use App::ProcLaunch::Util qw/ daemonize write_pid_file /;
+use App::ProcLaunch::Log qw/ log_info /;
+
+my $pid_file_path = '/tmp/reloader.pid';
+
+sub cleanup_pid_file
+{
+    sleep 3;
+    unlink $pid_file_path;
+    exit 0;
+}
+
+daemonize('/tmp/reloader.log');
+write_pid_file($pid_file_path, $$);
+
+$SIG{TERM} = \&cleanup_pid_file;
+$SIG{INT}  = \&cleanup_pid_file;
+$SIG{HUP}  = sub { log_info("Received SIGHUP.") };
+
+sleep(1) while 1;

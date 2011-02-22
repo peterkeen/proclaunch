@@ -6,7 +6,7 @@ use warnings;
 use base 'Exporter';
 use vars qw/ @EXPORT_OK /;
 use IO::File;
-use POSIX qw/ setsid /;
+use POSIX qw/ setsid :signal_h /;
 
 use App::ProcLaunch::Log qw/
     log_warn
@@ -30,6 +30,7 @@ BEGIN {
         daemonize
         stat_hash
         diff_stats
+        signal_name_to_num
     /;
 }
 
@@ -64,6 +65,9 @@ sub write_pid_file
 sub redirect_output
 {
     my ($filename) = @_;
+
+    return unless $filename;
+
     open(FH, ">>", $filename) or die "Cannot open $filename: $!";
     FH->autoflush(1);
 
@@ -127,6 +131,23 @@ sub diff_stats
              || $a->{device} != $b->{device}
     ;
     return 0;
+}
+
+sub signal_name_to_num
+{
+    my ($signal_name) = @_;
+
+    return {
+        SIGHUP    => SIGHUP,
+        SIGHUP    => SIGHUP,
+        SIGINT    => SIGINT,
+        SIGQUIT   => SIGQUIT,
+        SIGABRT   => SIGABRT,
+        SIGTERM   => SIGTERM,
+        SIGCONT   => SIGCONT,
+        SIGUSR1   => SIGUSR1,
+        SIGUSR2   => SIGUSR2,
+    }->{$signal_name};
 }
 
 1;

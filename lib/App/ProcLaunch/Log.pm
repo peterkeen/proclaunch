@@ -41,13 +41,14 @@ sub log_line
     my ($package, $filename, $caller_line, $sub) = caller 1;
     my $caller_info = $include_caller ? " at $filename line $caller_line" : "";
 
-    print STDERR sprintf("%s %s ${line}${caller_info}\n", $time, _level_text($level), @args);
+    my $logged_line = sprintf("%s %s ${line}${caller_info}\n", $time, _level_text($level), @args);
+    print STDERR $logged_line;
+    return $logged_line
 }
 
 sub log_fatal
 {
-    log_line(FATAL, 1, @_);
-    die @_;
+    die log_line(FATAL, 1, @_);
 }
 
 sub log_warn

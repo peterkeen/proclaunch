@@ -23,13 +23,19 @@ The profile directory should contain a series of directories, each of which desc
 
 * `restart`
     is an optional empty file who's presence tells proclaunch to restart `run` if it dies.
+
+* `stop_signal`
+    is an optional file that should contain a signal name that proclaunch will use to terminate the process. Default is SIGTERM.
+
+* `reload`
+    is an optional file who's presence indicates that proclaunch should send the contained signal and assume that the process will either continue running or manage it's own lifecycle. An empty file will use the default SIGHUP.
     
 * `user`
     is an optional file containing the user name that should execute `run`. Only effective if proclaunch has been run as root.
     
 ### Behavior
 
-Initially, proclaunch will launch all profiles contained in the profile directory. When a profile exits and the `restart` file exists, the profile will be restarted. Additionally, proclaunch will scan every second to see if either an individual profile directory has changed, been added, or disappeared. Added profiles will be started, removed profiles will be stopped with SIGTERM, and changed profiles will be restarted. Changes are determined by comparing file stats of the above set of files, not the directory as a whole.
+Initially, proclaunch will launch all profiles contained in the profile directory. When a profile exits and the `restart` file exists, the profile will be restarted. Additionally, proclaunch will scan every second to see if either an individual profile directory has changed, been added, or disappeared. Added profiles will be started, removed profiles will be stopped with SIGTERM or another signal as indicated in the `restart` file, and changed profiles will be restarted or reloaded. Changes are determined by comparing file stats of the above set of files, not the directory as a whole.
 
 ### Starting proclaunch
 

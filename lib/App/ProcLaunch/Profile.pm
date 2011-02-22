@@ -13,6 +13,7 @@ use App::ProcLaunch::Util qw/
     cleanup_dead_pid_file
     diff_stats
     stat_hash
+    signal_name_to_num
 /;
 
 use App::ProcLaunch::Log qw/
@@ -105,16 +106,24 @@ sub stop_if_should_stop
     my ($self) = @_;
 
     if (!$self->is_running()) {
-        log_info("%s died", $self->directory);
+        log_info("%s died", $self->directory());
         $self->_status(STATUS_STOPPED);
-    } elsif ($self->has_changed()) {
+    } elsif (! -e $self->directory()) {
+        log_info("%s disappeared. Stopping and not restarting.", $self->directory());
         $self->stop();
-        $self->_status(STATUS_STOPPING);
+        $self->_should_start(0);
+    } elsif ($self->has_changed()) {
+        if ($self->should_reload()) {
+            $self->reload();
+        } else {
+            $self->stop();
+        }
     }
 
     $self->_should_start($self->should_restart());
     $self->_refresh_file_stats();
 }
+
 
 sub check_if_stopped
 {
@@ -191,6 +200,13 @@ sub should_restart
     return -e $self->profile_file('restart');
 }
 
+sub should_reload
+{
+    my $self = shift;
+
+    return -e $self->profile_file('reload');
+}
+
 sub profile_file
 {
     my ($self, $filename) = @_;
@@ -227,7 +243,14 @@ sub send_signal
 {
     my ($self, $signal) = @_;
     my $pid = $self->current_pid();
+
+    $signal =~ s/\s//g;
+
     log_debug "%s sending %s to %s", $self->directory(), $signal, $self->current_pid();
+
+    if ($signal !~ /^\d+/) {
+        $signal = signal_name_to_num($signal);
+    }
 
     unless (kill $signal, $pid) {
         log_debug "%s not able to send signal! Assuming profile dead.", $self->directory();
@@ -245,7 +268,26 @@ sub stop
     }
 
     log_info "%s stopping", $self->directory();
-    $self->send_signal(15);
+
+    my $signal = -e $self->profile_file('stop_signal') ? $self->profile_setting('stop_signal') : 'SIGTERM';
+
+    $self->send_signal($signal);
+
+    $self->_status(STATUS_STOPPING);
+}
+
+sub reload
+{
+    my $self = shift;
+
+    unless ($self->is_running()) {
+        log_warn "%s is not running! Should be running on pid %s", $self->directory(), $self->current_pid();
+        return;
+    }
+
+    log_info "%s reloading", $self->directory();
+
+    $self->send_signal($self->profile_setting('reload') || 'SIGHUP');
 }
 
 sub has_changed
