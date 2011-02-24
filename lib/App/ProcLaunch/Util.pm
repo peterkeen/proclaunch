@@ -42,7 +42,14 @@ sub still_running
         return 0;
     }
 
-    return kill(0, $pid);
+    my $num_killed = kill(0, $pid);
+    my $error = "$!";
+
+    if ($error =~ /Operation not permitted/) {
+        return 1;
+    }
+
+    return $num_killed;
 }
 
 sub read_pid_file
