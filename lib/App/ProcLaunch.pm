@@ -20,8 +20,7 @@ use App::ProcLaunch::Log qw/
     log_debug
     log_fatal
     log_warn
-    DEBUG
-    INFO
+    log_level_number
 /;
 
 use File::Slurp qw/
@@ -34,7 +33,7 @@ use Class::Struct
     state_dir         => '$',
     profiles_dir      => '$',
     foreground        => '$',
-    debug             => '$',
+    log_level         => '$',
     _profiles         => '%',
     _last_scan_time   => '$',
 ;
@@ -58,7 +57,8 @@ sub run
     }
 
     my $profiles_dir = $self->profiles_dir();
-    set_log_level($self->debug() ? DEBUG : INFO);
+    my $log_level = log_level_number($self->log_level());
+    set_log_level($log_level);
 
     unless ($self->foreground()) {
         daemonize("$profiles_dir/error.log");

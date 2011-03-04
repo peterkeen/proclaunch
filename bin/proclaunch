@@ -10,6 +10,7 @@ use Getopt::Long;
 GetOptions(
     'f|foreground' => \my $foreground,
     'D|debug'      => \my $debug,
+    'log-level=s'  => \my $log_level,
 );
 
 my ($state_dir, $profiles_dir) = @ARGV;
@@ -17,9 +18,15 @@ my ($state_dir, $profiles_dir) = @ARGV;
 die "usage: $0 [options] [state dir] [profiles dir]"
     unless $state_dir && $profiles_dir;
 
+if ($debug) {
+    $log_level = 'debug';
+}
+
+$log_level ||= 'info';
+
 App::ProcLaunch->new(
     state_dir    => rel2abs($state_dir),
     profiles_dir => rel2abs($profiles_dir),
     foreground   => $foreground,
-    debug        => $debug,
+    log_level    => $log_level,
 )->run();

@@ -45,7 +45,7 @@ sub still_running
     my $num_killed = kill(0, $pid);
     my $error = "$!";
 
-    if ($error =~ /Operation not permitted/) {
+    if ($num_killed == 0 && $error =~ /Operation not permitted/) {
         return 1;
     }
 

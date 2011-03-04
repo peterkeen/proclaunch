@@ -9,7 +9,7 @@ Proclaunch is a super simple pure-perl user space process manager. It starts you
 
 ### Usage
 
-    $ proclaunch [state directory] [profile directory]
+    $ proclaunch [options] [state directory] [profile directory]
 
 When executed, proclaunch will daemonize itself and write it's pid file to `$state_directory/proclaunch.pid`.
 
@@ -32,6 +32,17 @@ The profile directory should contain a series of directories, each of which desc
     
 * `user`
     is an optional file containing the user name that should execute `run`. Only effective if proclaunch has been run as root.
+
+Options can include:
+
+* `--foreground -F`
+    run in the foreground. Do not daemonize.
+
+* `--debug -D`
+    include DEBUG output in proclaunch's log
+
+* `--log-level=[LOG LEVEL]`
+    instead of just debug, you can specify FATAL, WARN, INFO, or DEBUG as the maximum level of logging information you want. Default is INFO.
     
 ### Behavior
 
