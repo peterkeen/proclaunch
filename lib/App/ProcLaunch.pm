@@ -34,6 +34,7 @@ use Class::Struct
     profiles_dir      => '$',
     foreground        => '$',
     log_level         => '$',
+    log_path          => '$',
     _profiles         => '%',
     _last_scan_time   => '$',
 ;
@@ -61,7 +62,7 @@ sub run
     set_log_level($log_level);
 
     unless ($self->foreground()) {
-        daemonize("$profiles_dir/error.log");
+        daemonize($self->log_path());
         write_pid_file($self->pidfile(), $$);
     }
 

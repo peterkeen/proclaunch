@@ -11,6 +11,7 @@ GetOptions(
     'f|foreground' => \my $foreground,
     'D|debug'      => \my $debug,
     'log-level=s'  => \my $log_level,
+    'log-path=s'   => \my $log_path,
 );
 
 my ($state_dir, $profiles_dir) = @ARGV;
@@ -24,9 +25,15 @@ if ($debug) {
 
 $log_level ||= 'info';
 
+my $abs_state_dir = rel2abs($state_dir);
+my $abs_profiles_dir = rel2abs($profiles_dir);
+
+$log_path ||= $abs_profiles_dir . '/error.log';
+
 App::ProcLaunch->new(
-    state_dir    => rel2abs($state_dir),
-    profiles_dir => rel2abs($profiles_dir),
+    state_dir    => $abs_state_dir,
+    profiles_dir => $abs_profiles_dir,
+    log_path     => $log_path,
     foreground   => $foreground,
     log_level    => $log_level,
 )->run();
