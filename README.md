@@ -56,6 +56,10 @@ Proclaunch daemonizes itself by default, so the easiest thing to do is add a lin
 
 Proclaunch is idempotent, meaning if it's already running it'll silently exit. This cron entry ensures that it will be restarted if it falls over for any reason.
 
+### Stopping proclaunch
+
+To stop proclaunch without stopping profiles, send it SIGINT or SIGTERM. If you want to stop all of the profiles as well, send it SIGHUP. It will wait around for all the profiles to die, so if you have a misbehaving profile you can send it SIGHUP again and proclaunch will die immediately. Your misbehaving profile will continue to misbehave.
+
 ### Contributing 
 
 If you have bug reports, please use the [Github issue tracker][issues]. If you have something to contribute, fork proclaunch and send me a pull request :)
