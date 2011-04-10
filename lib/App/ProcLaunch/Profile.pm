@@ -201,6 +201,13 @@ sub is_running
     return still_running($self->pid_file());
 }
 
+sub is_stopped
+{
+    my $self = shift;
+
+    return $self->_status() == STATUS_STOPPED;
+}
+
 sub should_restart
 {
     my $self = shift;

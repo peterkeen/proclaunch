@@ -37,6 +37,7 @@ use Class::Struct
     log_path          => '$',
     _profiles         => '%',
     _last_scan_time   => '$',
+    _murdered         => '$',
 ;
 
 sub foreach_profile
@@ -52,6 +53,7 @@ sub run
     my $self = shift;
     $self->_profiles({});
     $self->_last_scan_time(0);
+    $self->_murdered(0);
 
     unless(cleanup_dead_pid_file($self->pidfile())) {
         exit 0;
@@ -72,11 +74,15 @@ sub run
     chdir $profiles_dir;
 
     $SIG{HUP} = sub {
-        log_info "ProcLaunch received HUP. Stopping all profiles.";
-        $self->foreach_profile(sub { shift->stop() });
+        if ($self->_murdered()) {
+            log_info "ProcLaunch received HUP again. Exiting immediately.";
+            exit 111;
+        }
 
-        log_info "ProcLaunch exiting";
-        exit 111;
+        log_info "ProcLaunch received HUP. Stopping all profiles.";
+
+        $self->_murdered(1);
+        $self->stop_all_profiles();
     };
 
     $SIG{TERM} = sub {
@@ -84,9 +90,22 @@ sub run
         exit 0;
     };
 
-    while(1) {
+    $SIG{INT} = sub {
+        log_info "ProcLaunch exiting";
+        exit 0;
+    };
 
+    while(1) {
         $self->scan_profiles();
+
+        if ($self->_murdered()) {
+            log_debug "ProcLaunch Checking for running profiles...";
+
+            unless ($self->_any_running()) {
+                log_info "ProcLaunch all profiles stopped. Exiting.";
+                exit 111;
+            }
+        }
 
         $self->foreach_profile(sub { shift->run(); });
 
@@ -139,6 +158,32 @@ sub _should_scan
     my ($self) = @_;
     return 1 if (time() - $self->_last_scan_time()) >= RESCAN_EVERY_SECONDS;
     return 0;
+}
+
+sub stop_all_profiles
+{
+    my ($self) = @_;
+
+    $self->foreach_profile(sub { shift->_should_start(0) });
+    $self->foreach_profile(sub { shift->stop() });
+}
+
+sub _any_running
+{
+    my ($self) = @_;
+
+    my %still_running = map { $_ => 1 } keys %{ $self->_profiles };
+
+    $self->foreach_profile(sub {
+        my $profile = shift;
+        if ($profile->is_stopped()) {
+            delete $still_running{$profile->directory};
+        } else {
+            log_debug "%s still running", $profile->directory();
+        }
+    });
+
+    return scalar(keys %still_running);
 }
 
 sub pidfile
