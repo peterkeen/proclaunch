@@ -43,7 +43,7 @@ my $proc_pid = read_pid_file(catfile($state_dir, 'proclaunch.pid'));
 ok($proc_pid, "proc pid exists");
 kill SIGHUP, $proc_pid;
 
-sleep 3;
+sleep 4;
 
 my @lines = read_file(catfile($profiles_dir, 'error.log'));
 chomp @lines;
