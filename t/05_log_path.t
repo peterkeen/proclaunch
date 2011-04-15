@@ -54,7 +54,8 @@ INFO  test_profile starting
 INFO  test_profile running pid PID
 INFO  ProcLaunch received HUP. Stopping all profiles.
 INFO  test_profile stopping
-INFO  ProcLaunch exiting
+INFO  test_profile stopped
+INFO  ProcLaunch all profiles stopped. Exiting.
 HERE
 
 
