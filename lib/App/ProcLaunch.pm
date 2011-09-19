@@ -73,6 +73,8 @@ sub run
     log_debug "ProcLaunch changing to $profiles_dir";
     chdir $profiles_dir;
 
+	$SIG{CHLD} = 'IGNORE';
+
     $SIG{HUP} = sub {
         if ($self->_murdered()) {
             log_info "ProcLaunch received HUP again. Exiting immediately.";
